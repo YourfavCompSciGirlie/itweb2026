@@ -11,8 +11,7 @@ class SimpleFraudGraph:
         
     def build_graph(self, customers_df, transactions_df):
         print("Building fraud detection graph...")
-        
-        # STEP 1: Add customer nodes
+
         for _, customer in customers_df.iterrows():
             days_since_sim = (datetime.now() - customer['sim_last_change']).days
             
@@ -25,12 +24,10 @@ class SimpleFraudGraph:
                 device_id=customer['device_id'],      
                 account_age=customer['account_age_days'] 
             )
-        
-        # STEP 2: Add merchant nodes
+
         for merchant in transactions_df['merchant'].unique():
             self.graph.add_node(merchant, type='merchant')
         
-        # STEP 3: Add transaction edges
         for _, txn in transactions_df.iterrows():
             self.graph.add_edge(
                 txn['user_id'],
@@ -41,7 +38,6 @@ class SimpleFraudGraph:
                 txn_id=txn['txn_id']        
             )
         
-        # STEP 4: Add device sharing edges 
         device_groups = customers_df.groupby('device_id')['user_id'].apply(list)
         for device, users in device_groups.items():
             if len(users) > 1:  
@@ -73,7 +69,6 @@ class SimpleFraudGraph:
         if node_data.get('type') == 'customer':
             neighbors = list(self.graph.neighbors(node_id))
             
-            # Count fraudsters connected to this node
             fraud_neighbors = 0
             merchant_connections = 0
             
@@ -84,14 +79,11 @@ class SimpleFraudGraph:
                 elif neighbor_data.get('type') == 'merchant':
                     merchant_connections += 1
             
-            # Calculate SIM risk (0-1 scale, higher = more risky)
             sim_risk = min(1.0, 7.0 / max(1, node_data.get('sim_days_ago', 365)))
             
-            # KYC score (0-1 scale, lower = more risky)
             kyc_scores = {'basic': 0, 'verified': 0.5, 'premium': 1.0}
             kyc_score = kyc_scores.get(node_data.get('kyc', 'basic'), 0)
             
-            # Account age risk (newer accounts = higher risk)
             age_risk = min(1.0, 30.0 / max(1, node_data.get('account_age', 365)))
             
             return {
@@ -103,7 +95,7 @@ class SimpleFraudGraph:
                 'connections': len(neighbors),
                 'merchant_connections': merchant_connections,
                 'fraud_connections': fraud_neighbors,
-                'risk_score': 0  # Will be calculated by GNN
+                'risk_score': 0  
             }
         else:
             return {
