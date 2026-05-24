@@ -1,58 +1,42 @@
-import os
-from supabase import create_client, Client
-from dotenv import load_dotenv
+# Mock database module for development
+from datetime import datetime
+from typing import Dict, List, Optional
 
-load_dotenv()
+def log_transaction(transaction_data: dict) -> dict:
+    """
+    Mock function to log transactions to database
+    In production, this would connect to Supabase or PostgreSQL
+    """
+    print(f"[MOCK DB] Logging transaction: {transaction_data.get('transaction_id')}")
+    
+    return {
+        "success": True,
+        "transaction_id": transaction_data.get('transaction_id'),
+        "logged_at": datetime.now().isoformat()
+    }
 
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
-
-if not SUPABASE_URL or not SUPABASE_ANON_KEY:
-    raise ValueError("Missing SUPABASE_URL or SUPABASE_ANON_KEY in .env file")
-
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
-
-
-def log_transaction(
-    user_id: str,
-    amount: float,
-    recipient_phone_hash: str,
-    sim_swap_minutes_ago: int,
-    risk_score: int,
-    decision: str,
-    reason: str,
-    location_tower: str = None
-):
-    """Save a transaction result to Supabase."""
-    try:
-        data = {
+def get_transaction_history(user_id: str, limit: int = 10) -> List[dict]:
+    """
+    Mock function to get transaction history
+    """
+    return [
+        {
+            "transaction_id": f"TXN_{i}",
             "user_id": user_id,
-            "amount": amount,
-            "recipient_phone_hash": recipient_phone_hash,
-            "sim_swap_minutes_ago": sim_swap_minutes_ago,
-            "risk_score": risk_score,
-            "decision": decision,
-            "reason": reason,
-            "location_tower": location_tower
+            "amount": 100.0 * i,
+            "timestamp": datetime.now().isoformat(),
+            "status": "COMPLETED"
         }
-        result = supabase.table("transactions").insert(data).execute()
-        return result
-    except Exception as e:
-        print(f"DB log error: {e}")
-        return None
+        for i in range(limit)
+    ]
 
-
-def get_recent_transactions(limit: int = 20):
-    """Fetch recent transactions for the dashboard."""
-    try:
-        result = (
-            supabase.table("transactions")
-            .select("*")
-            .order("timestamp", desc=True)
-            .limit(limit)
-            .execute()
-        )
-        return result.data
-    except Exception as e:
-        print(f"DB fetch error: {e}")
-        return []
+def update_transaction_status(transaction_id: str, status: str) -> dict:
+    """
+    Mock function to update transaction status
+    """
+    return {
+        "success": True,
+        "transaction_id": transaction_id,
+        "status": status,
+        "updated_at": datetime.now().isoformat()
+    }
